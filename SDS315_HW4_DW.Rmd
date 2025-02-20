@@ -1,0 +1,187 @@
+---
+title: "Homework 4"
+author: "Donghwan Won"
+date: "`r Sys.Date()`"
+output: html_document
+---
+**EID:** dw34446
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(mosaic)
+
+```
+
+## 1
+
+```{r}
+nflip(n=2021, prob=0.024)
+sim_sec <- do(100000)*nflip(n=2021, prob=0.024)
+ggplot(sim_sec) +
+  geom_histogram(aes(x=nflip)) +
+    labs(
+  title = "Simulated Distribution of Flagged Trades Under the Null Hypothesis",
+  y = "Count", x = "nflip")
+
+sum(sim_sec >=70)
+sum(sim_sec >=70)/100000
+
+```
+Null hypothesis: The null hypothesis states that Iron Bank employees' trades are flagged at the 2.4% rate as other traders.
+
+Test statistic: Number of trades are our test statistic. In our data, 70 out of 2021 trades by Iron bank employees were flagged by SEC.
+
+P-Value: 0.00185
+
+Conclusion: Since the p-value is pretty small(0.00185), we have strong evidence that against the null hypothesis which suggests that Iron Bank's trade may be in suspicious.
+
+## 2
+```{r}
+nflip(n=50, prob=0.03)
+sim_sec_2 <- do(100000)*nflip(n=50, prob=0.03)
+ggplot(sim_sec) +
+  geom_histogram(aes(x=nflip), binwidth=1)  +
+    labs(
+  title = "Simulated Distribution of Flagged Trades Under the Null Hypothesis",
+  y = "Count", x = "nflip")
+sum(sim_sec_2 >=8)
+sum(sim_sec_2 >=8)/100000
+
+```
+
+Null hypothesis: The rate of health code violations at Gourmet Bites restaurants is equal to the citywide average of 3%.
+
+Test statistic: Number of inspections are our test statistic. In our data, 8 out of 50 inspections by local Health Department were resulted in health code violations being reported.
+
+P-Value: 0.00011
+
+Conclusion: Since the p-value is pretty small(0.00011), we have strong evidence against the null hypothesis. This suggests that Gourmet Bites has a significantly higher health code violation rate than the citywide average
+
+
+
+## 3. 
+```{r}
+
+expected_distribution = c(Group1 = 0.3, Group2 = 0.25, Group3 = 0.2, Group4 = 0.15, Group5 = 0.1)
+observed_count = c(Group1 = 85, Group2 = 56, Group3 = 59, Group4 = 27, Group5 = 13)
+
+num_jury = sum(observed_count)
+
+chi_squared_statistic = function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+
+expected_counts = expected_distribution * num_jury
+chi_jury = chi_squared_statistic(observed_count, expected_counts)
+
+sim_jurybias = do(100000) * {
+  sim_jury = rmultinom(1, num_jury, expected_distribution)  
+  chi_jury_2 = chi_squared_statistic(sim_jury, expected_counts)
+  tibble(chi_jury = chi_jury_2)
+}
+
+p_value <- sum(sim_results$chi_jury >= chi_jury) / nrow(sim_results)
+
+print(paste(round(p_value, 5)))
+
+ggplot(sim_jurybias) +
+  geom_histogram(aes(x = chi_jury)) +
+  labs(title = "Chi-Square Simulation Distribution for jury bias",
+       x = "Chi-Square Statistic",
+       y = "Frequency") 
+
+
+
+```
+
+Null Hypothesis: The empaneled jurors follow the county's demographic proportions.
+
+Test statistic: Number of people is our test statistic. In our data, 8 out of 50 inspections by local Health Department were resulted in health code violations being reported.
+
+P-Value: 0.0146
+
+Conclusion: Since the p-value is pretty small(0.0146), this means the jury selection is significantly different from the county’s demographic proportions. This also indicates that there is a possible systematic bias in jury selection. Some groups may be more frequently exempted due to variouso reasons. To invest further, you could compare this jury selection with other jury selection from other judges to see if there are bias. 
+
+
+
+
+```{r}
+## 4. A
+# This will calculate the chi-squared goodness of fit statistic
+# for an input sentence, based on a frequency table of letters
+calculate_chi_squared = function(sentence, freq_table) {
+  
+  # Ensure letter frequencies are normalized and sum to 1
+  freq_table$Probability = freq_table$Probability / sum(freq_table$Probability)
+  
+  # Remove non-letters and convert to uppercase
+  clean_sentence = gsub("[^A-Za-z]", "", sentence)
+  clean_sentence = toupper(clean_sentence)
+  
+  # Count the occurrences of each letter in the sentence
+  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  
+  # Calculate expected counts
+  total_letters = sum(observed_counts)
+  expected_counts = total_letters * freq_table$Probability
+
+  # Chi-squared statistic
+  chi_squared_stat = sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared_stat)
+}
+
+brown <- readLines("C:/Users/namyu/OneDrive/바탕 화면/brown_sentences.txt")
+
+for (i in 1:length(brown)) {
+  chi_squared_values[i] <- calculate_chi_squared(brown[i], letter_frequencies)
+}
+
+chi_squared_df <- data.frame(Sentence_ID = 1:length(brown), Chi_Squared_Value = chi_squared_values)
+
+
+
+
+```
+
+
+```{r}
+## 4. B
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+chi_squared_null <- chi_squared_df$Chi_Squared_Value  
+chi_squared_values <- numeric(length(sentences))  
+
+for (i in 1:length(sentences)) {
+  chi_squared_values[i] <- calculate_chi_squared(sentences[i], letter_frequencies)
+}
+
+
+for (i in 1:length(sentences)) {
+  p_values[i] <- mean(chi_squared_null >= chi_squared_values[i])  
+}
+
+results_df <- data.frame(
+  Sentence_ID = 1:length(sentences),
+  Chi_Squared = round(chi_squared_values, 3),
+  P_Value = round(p_values, 3)
+)
+
+likely_LLM_sentence <- which.min(p_values)
+print(likely_LLM_sentence)
+
+```
+The most likely LLM-generated sentence is Sentence 6 because it has the lowest p-value.
